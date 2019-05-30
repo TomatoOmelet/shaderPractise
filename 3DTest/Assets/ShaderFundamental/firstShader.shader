@@ -38,8 +38,7 @@ Shader "custome/my first shader"
                 InterpolationData i;
                 i.localPos = v.obPos.xyz;
                 i.position = UnityObjectToClipPos(v.obPos);
-                i.uv = (v.uv * _MainTexture_ST.xy + _MainTexture_ST.zw) % 1;
-                //i.uv = TRANSFORM_TEX(v.uv, _MainTexture);
+                i.uv = TRANSFORM_TEX(v.uv, _MainTexture);
                 return i;
             }
 
