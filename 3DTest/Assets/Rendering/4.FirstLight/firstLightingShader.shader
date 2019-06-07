@@ -5,22 +5,29 @@ Shader "custome/Rendering/First Lighting Shader"
 
     Properties
     {
-        _Color("Color", Color) = (1, 1, 1, 1)
-        _MainTexture("Texture", 2D) = "white"{}
+        _Color("_Tint", Color) = (1, 1, 1, 1)
+        _SpecularTint("Specular", Color) = (0.5, 0.5, 0.5)
+        _MainTexture("Albedo", 2D) = "white"{}
+        _Smoothness("Smoothness", range(0.01,1)) = 0.01
     }
 
     SubShader{
 
         Pass{
+            Tags{
+                "LightMode" = "ForwardBase"
+            }
             CGPROGRAM
                 
             #pragma vertex MyVertex
             #pragma fragment MyFrag
-            #include "UnityCG.cginc"
+            #include "UnityStandardBRDF.cginc"
+            #include "UnityStandardUtils.cginc"
 
-            float4 _Color;
+            float4 _Color, _SpecularTint;
             sampler2D _MainTexture;
             float4 _MainTexture_ST;
+            float _Smoothness;
 
             struct VertexData{
                 float4 obPos : POSITION;
@@ -30,7 +37,7 @@ Shader "custome/Rendering/First Lighting Shader"
 
             struct InterpolationData{
                 float4 position : SV_POSITION;
-                float3 localPos : TEXCOORD0;
+                float3 worldPos : TEXCOORD0;
                 float2 uv : TEXCOORD1;
                 float3 normal : TEXCOORD2;
             };
@@ -38,17 +45,33 @@ Shader "custome/Rendering/First Lighting Shader"
             InterpolationData MyVertex(VertexData v)
             {
                 InterpolationData i;
-                i.localPos = v.obPos.xyz;
+                i.worldPos = mul(unity_ObjectToWorld ,v.obPos);
                 i.position = UnityObjectToClipPos(v.obPos);
                 i.uv = TRANSFORM_TEX(v.uv, _MainTexture);
-                i.normal = mul(unity_ObjectToWorld, float4(v.normal, 0));
-                i.normal = normalize(i.normal);
+                i.normal = UnityObjectToWorldNormal(v.normal);
                 return i;
             }
 
             float4 MyFrag(InterpolationData i) : SV_TARGET
             {
-                return float4(i.normal * 0.5 + 0.5, 1);
+                float3 lightDir = _WorldSpaceLightPos0.xyz;
+                float3 viewDir = normalize(_WorldSpaceCameraPos - i.worldPos);
+                i.normal = normalize(i.normal);
+
+                float3 reflectDir = reflect(-lightDir, i.normal);
+                float3 lightCol = _LightColor0.rgb;
+                
+                float3 halfVector = normalize(lightDir + viewDir);
+                float4 spectular = float4(lightCol * _SpecularTint.rgb, 1) *pow(DotClamped(halfVector, i.normal), _Smoothness*10);
+                float3 albedo = tex2D(_MainTexture, i.uv).rgb * _Color.rgb;
+
+                float oneMinusReflectivity;
+                albedo = EnergyConservationBetweenDiffuseAndSpecular(albedo, spectular.rgb ,oneMinusReflectivity);
+                float4 diffuse = float4(albedo * lightCol * DotClamped(i.normal, lightDir), 1);
+
+                
+                return spectular + diffuse;
+                
             }
 
             ENDCG
