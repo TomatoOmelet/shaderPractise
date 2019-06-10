@@ -6,7 +6,8 @@ Shader "custome/Rendering/First Lighting Shader"
     Properties
     {
         _Color("_Tint", Color) = (1, 1, 1, 1)
-        _SpecularTint("Specular", Color) = (0.5, 0.5, 0.5)
+        //_SpecularTint("Specular", Color) = (0.5, 0.5, 0.5)
+        [Gamma]_Metalic("Metalic", Range(0, 1)) = 0
         _MainTexture("Albedo", 2D) = "white"{}
         _Smoothness("Smoothness", range(0.01,1)) = 0.01
     }
@@ -23,11 +24,12 @@ Shader "custome/Rendering/First Lighting Shader"
             #pragma fragment MyFrag
             #include "UnityStandardBRDF.cginc"
             #include "UnityStandardUtils.cginc"
+            #include "UnityPBSLighting.cginc"
 
-            float4 _Color, _SpecularTint;
+            float4 _Color;//, _SpecularTint;
             sampler2D _MainTexture;
             float4 _MainTexture_ST;
-            float _Smoothness;
+            float _Smoothness, _Metalic;
 
             struct VertexData{
                 float4 obPos : POSITION;
@@ -61,16 +63,29 @@ Shader "custome/Rendering/First Lighting Shader"
                 float3 reflectDir = reflect(-lightDir, i.normal);
                 float3 lightCol = _LightColor0.rgb;
                 
-                float3 halfVector = normalize(lightDir + viewDir);
-                float4 spectular = float4(lightCol * _SpecularTint.rgb, 1) *pow(DotClamped(halfVector, i.normal), _Smoothness*10);
-                float3 albedo = tex2D(_MainTexture, i.uv).rgb * _Color.rgb;
-
-                float oneMinusReflectivity;
-                albedo = EnergyConservationBetweenDiffuseAndSpecular(albedo, spectular.rgb ,oneMinusReflectivity);
-                float4 diffuse = float4(albedo * lightCol * DotClamped(i.normal, lightDir), 1);
-
+                //float3 halfVector = normalize(lightDir + viewDir);
                 
-                return spectular + diffuse;
+                float3 albedo = tex2D(_MainTexture, i.uv).rgb * _Color.rgb;
+                float3 spectularTint = albedo * _Metalic;
+                //float4 spectular = float4(lightCol * spectularTint.rgb, 1) *pow(DotClamped(halfVector, i.normal), _Smoothness*10);
+
+                float oneMinusReflectivity = 1 - _Metalic;
+                albedo = DiffuseAndSpecularFromMetallic(albedo, _Metalic, spectularTint, oneMinusReflectivity);//= EnergyConservationBetweenDiffuseAndSpecular(albedo, spectular.rgb ,oneMinusReflectivity);
+                //float4 diffuse = float4(albedo * lightCol * DotClamped(i.normal, lightDir), 1);
+
+                UnityLight light;
+                light.color = lightCol;
+                light.dir = lightDir;
+                light.ndotl = DotClamped(lightCol, lightDir);
+
+                UnityIndirect indirect;
+                indirect.diffuse = 0;
+                indirect.specular = 0;
+                
+                return UNITY_BRDF_PBS(albedo, spectularTint,
+                                      oneMinusReflectivity, _Smoothness,
+                                      i.normal, viewDir,
+                                      light, indirect);//spectular + diffuse;
                 
             }
 
