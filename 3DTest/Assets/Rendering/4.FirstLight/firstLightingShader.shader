@@ -22,6 +22,7 @@ Shader "custome/Rendering/First Lighting Shader"
                 
             #pragma vertex MyVertex
             #pragma fragment MyFrag
+            #pragma target 3.0
             #include "UnityStandardBRDF.cginc"
             #include "UnityStandardUtils.cginc"
             #include "UnityPBSLighting.cginc"
