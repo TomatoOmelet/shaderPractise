@@ -24,7 +24,27 @@ struct InterpolationData{
     float3 worldPos : TEXCOORD0;
     float2 uv : TEXCOORD1;
     float3 normal : TEXCOORD2;
+    #if defined(VERTEXLIGHT_ON)
+        float3 vertexColor : TEXCOORD3;
+    #endif
 };
+
+void CalculateVertexLight(inout InterpolationData i)
+{
+    #if defined(VERTEXLIGHT_ON)
+        // float3 lightPos = float3(unity_4LightPosX0.x, unity_4LightPosY0.x,unity_4LightPosZ0.x);
+        // float3 lightVec = lightPos - i.worldPos;
+        // float3 lightDir = normalize(lightVec);
+        // float ndotl = DotClamped(lightDir, i.normal);
+        // float attenuation = 1/(1 + dot(lightVec, lightVec) * unity_4LightAtten0.x);
+        // i.vertexColor = unity_LightColor[0].rgb * attenuation * ndotl;
+        i.vertexColor = Shade4PointLights(
+            unity_4LightPosX0, unity_4LightPosY0, unity_4LightPosZ0,
+            unity_LightColor[0].rgb, unity_LightColor[1].rgb, unity_LightColor[2].rgb, unity_LightColor[3].rgb,
+            unity_4LightAtten0, i.worldPos, i.normal 
+        );
+    #endif
+}
 
 InterpolationData MyVertex(VertexData v)
 {
@@ -33,6 +53,7 @@ InterpolationData MyVertex(VertexData v)
     i.position = UnityObjectToClipPos(v.obPos);
     i.uv = TRANSFORM_TEX(v.uv, _MainTexture);
     i.normal = UnityObjectToWorldNormal(v.normal);
+    CalculateVertexLight(i);
     return i;
 }
 
@@ -53,6 +74,17 @@ UnityLight CreateLight(InterpolationData i)
     return light;
 }
 
+UnityIndirect CreateIndirectLight(InterpolationData i)
+{
+    UnityIndirect indirect;
+    indirect.diffuse = 0;
+    indirect.specular = 0;
+    #if defined(VERTEXLIGHT_ON)
+        indirect.diffuse = i.vertexColor;
+    #endif
+    return indirect;
+}
+
 float4 MyFrag(InterpolationData i) : SV_TARGET
 {
     float3 viewDir = normalize(_WorldSpaceCameraPos - i.worldPos);
@@ -67,13 +99,11 @@ float4 MyFrag(InterpolationData i) : SV_TARGET
     albedo = DiffuseAndSpecularFromMetallic(albedo, _Metalic, spectularTint, oneMinusReflectivity);//= EnergyConservationBetweenDiffuseAndSpecular(albedo, spectular.rgb ,oneMinusReflectivity);
     //float4 diffuse = float4(albedo * lightCol * DotClamped(i.normal, lightDir), 1);
 
-    UnityIndirect indirect;
-    indirect.diffuse = 0;
-    indirect.specular = 0;
+    
     
     return UNITY_BRDF_PBS(albedo, spectularTint,
                             oneMinusReflectivity, _Smoothness,
                             i.normal, viewDir,
-                            CreateLight(i), indirect);//spectular + diffuse;
+                            CreateLight(i), CreateIndirectLight(i));//spectular + diffuse;
 }
 

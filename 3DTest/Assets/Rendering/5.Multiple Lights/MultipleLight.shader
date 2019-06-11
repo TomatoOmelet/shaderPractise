@@ -16,7 +16,7 @@
                         "LightMode" = "ForwardBase"
                     }
                 CGPROGRAM
-                
+                #pragma multi_compile _ VERTEXLIGHT_ON
                 #include "Light.cginc"
                 #pragma vertex MyVertex
                 #pragma fragment MyFrag
