@@ -43,7 +43,7 @@ UnityLight CreateLight(InterpolationData i)
     float3 lightVec = _WorldSpaceLightPos0.xyz - i.worldPos;
     //float attenuation; = 10/(1 + dot(lightVec, lightVec));
     UNITY_LIGHT_ATTENUATION(attenuation, 0, i.worldPos);
-    #if defined(POINT)|| defined(SPOT)
+    #if defined(POINT)|| defined(SPOT) || defined(POINT_COOKIE)
         light.dir = normalize(lightVec);
     #else
         light.dir = _WorldSpaceLightPos0.xyz;

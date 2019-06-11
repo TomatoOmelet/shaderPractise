@@ -32,7 +32,7 @@
                 Blend One One
                 Zwrite Off
                 CGPROGRAM
-                #pragma multi_compile DIRECTIONAL POINT SPOT
+                #pragma multi_compile_fwdadd
 
                 #include "Light.cginc"
                 #pragma vertex MyVertex
