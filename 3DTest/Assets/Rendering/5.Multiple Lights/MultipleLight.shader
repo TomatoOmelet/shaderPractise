@@ -17,6 +17,7 @@
                     }
                 CGPROGRAM
                 #pragma multi_compile _ VERTEXLIGHT_ON
+                #define FORWARD_BASE_PASS
                 #include "Light.cginc"
                 #pragma vertex MyVertex
                 #pragma fragment MyFrag

@@ -82,6 +82,11 @@ UnityIndirect CreateIndirectLight(InterpolationData i)
     #if defined(VERTEXLIGHT_ON)
         indirect.diffuse = i.vertexColor;
     #endif
+    
+    #if defined(FORWARD_BASE_PASS)
+        indirect.diffuse += max(0, ShadeSH9(float4(i.normal, 1)));
+    #endif
+
     return indirect;
 }
 
@@ -98,9 +103,7 @@ float4 MyFrag(InterpolationData i) : SV_TARGET
     float oneMinusReflectivity = 1 - _Metalic;
     albedo = DiffuseAndSpecularFromMetallic(albedo, _Metalic, spectularTint, oneMinusReflectivity);//= EnergyConservationBetweenDiffuseAndSpecular(albedo, spectular.rgb ,oneMinusReflectivity);
     //float4 diffuse = float4(albedo * lightCol * DotClamped(i.normal, lightDir), 1);
-
-    
-    
+  
     return UNITY_BRDF_PBS(albedo, spectularTint,
                             oneMinusReflectivity, _Smoothness,
                             i.normal, viewDir,
