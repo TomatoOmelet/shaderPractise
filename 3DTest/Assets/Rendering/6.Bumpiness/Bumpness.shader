@@ -17,6 +17,10 @@ Shader "custome/Rendering/Bumpness"
         _Smoothness("Smoothness", range(0.01,1)) = 0.01
     }
 
+    CGINCLUDE
+    #define BINORMAL_PER_FRAGMENT
+    ENDCG
+
     SubShader{
 
         Pass{
@@ -40,6 +44,7 @@ Shader "custome/Rendering/Bumpness"
             struct VertexData{
                 float4 obPos : POSITION;
                 float3 normal: NORMAL;
+                float4 tangent: TANGENT;
                 float2 uv : TEXCOORD0;
             };
 
@@ -48,16 +53,38 @@ Shader "custome/Rendering/Bumpness"
                 float3 worldPos : TEXCOORD0;
                 float4 uv : TEXCOORD1;
                 float3 normal : TEXCOORD2;
+                #if defined(BINORMAL_PER_FRAGMENT)
+                    float4 tangent: TEXCOORD3; 
+                #else
+                    float3 tangent: TEXCOORD3; 
+                    float3 binormal: TEXCOORD5;
+                #endif
+                #if defined(VERTEXLIGHT_ON)
+                    float3 vertexLightColor : TEXCOORD4;
+                #endif
             };
+
+            float3 CreateBinormal(float3 normal, float3 tangent, float binormalSigh)
+            {
+                return cross(normal, tangent.xyz) * (binormalSigh * unity_WorldTransformParams.w);
+            }
 
             InterpolationData MyVertex(VertexData v)
             {
                 InterpolationData i;
                 i.worldPos = mul(unity_ObjectToWorld ,v.obPos);
                 i.position = UnityObjectToClipPos(v.obPos);
+                i.normal = UnityObjectToWorldNormal(v.normal);
+                #if defined(BINORMAL_PER_FRAGMENT)
+                    i.tangent = float4(UnityObjectToWorldDir(v.tangent.xyz), v.tangent.w);
+                #else
+                    i.tangent = UnityObjectToWorldDir(v.tangent.xyz);
+		            i.binormal = CreateBinormal(i.normal, i.tangent, v.tangent.w);
+                #endif
+
                 i.uv.xy = TRANSFORM_TEX(v.uv, _MainTexture);
                 i.uv.zw = TRANSFORM_TEX(v.uv, _DetailedTexture);
-                i.normal = UnityObjectToWorldNormal(v.normal);
+                
                 return i;
             }
 
@@ -74,9 +101,16 @@ Shader "custome/Rendering/Bumpness"
                 i.normal.z = sqrt(1 - saturate(dot(i.normal.xy, i.normal.xy)));*/
                 float3 normal1 = UnpackScaleNormal(tex2D(_NormalMap, i.uv.xy), _BumpScale);
                 float3 normal2 = UnpackScaleNormal(tex2D(_DetailNormalMap, i.uv.zw), _DetailBumpScale);
-                i.normal = BlendNormals(normal1, normal2);
+                float3 tangentSpaceNormal = BlendNormals(normal1, normal2).xzy;
                 //i.normal = float3(normal1.xy + normal2.xy, normal1.z * normal2.z);
-                i.normal = i.normal.xzy;
+                #if defined(BINORMAL_PER_FRAGMENT)
+                    float3 binormal = CreateBinormal(i.normal, i.tangent.xyz, i.tangent.w);
+                #else
+                    float3 binormal = i.binormal;
+                #endif
+                i.normal = normalize(tangentSpaceNormal.x * i.tangent + 
+                                    tangentSpaceNormal.y * i.normal +
+                                    tangentSpaceNormal.z * binormal);
             }
 
             float4 MyFrag(InterpolationData i) : SV_TARGET
