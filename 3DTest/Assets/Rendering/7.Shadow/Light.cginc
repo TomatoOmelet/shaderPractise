@@ -24,6 +24,9 @@ struct InterpolationData{
     float3 worldPos : TEXCOORD0;
     float2 uv : TEXCOORD1;
     float3 normal : TEXCOORD2;
+    #if defined(SHADOWS_SCREEN)
+        float4 shadowCoordinats : TEXCOORD4;
+    #endif
     #if defined(VERTEXLIGHT_ON)
         float3 vertexColor : TEXCOORD3;
     #endif
@@ -53,6 +56,11 @@ InterpolationData MyVertex(VertexData v)
     i.position = UnityObjectToClipPos(v.obPos);
     i.uv = TRANSFORM_TEX(v.uv, _MainTexture);
     i.normal = UnityObjectToWorldNormal(v.normal);
+
+    #if defined(SHADOWS_SCREEN)
+        i.shadowCoordinats.xy = (float2(i.position.x, -i.position.y) + i.position.w) * 0.5;
+        i.shadowCoordinats.zw = i.position.zw;
+    #endif
     CalculateVertexLight(i);
     return i;
 }
@@ -64,7 +72,7 @@ UnityLight CreateLight(InterpolationData i)
     float3 lightVec = _WorldSpaceLightPos0.xyz - i.worldPos;
     //float attenuation; = 10/(1 + dot(lightVec, lightVec));
     #if defined(SHADOWS_SCREEN)
-        float attenuation = 1;
+        float attenuation = tex2D(_ShadowMapTexture, i.shadowCoordinats.xy/i.position.w);
     #else
         UNITY_LIGHT_ATTENUATION(attenuation, 0, i.worldPos);
     #endif
