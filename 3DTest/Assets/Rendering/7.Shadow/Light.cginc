@@ -14,19 +14,18 @@ float4 _MainTexture_ST;
 float _Smoothness, _Metalic;
 
 struct VertexData{
-    float4 obPos : POSITION;
+    float4 vertex : POSITION;
     float3 normal: NORMAL;
     float2 uv : TEXCOORD0;
 };
 
 struct InterpolationData{
-    float4 position : SV_POSITION;
+    float4 pos : SV_POSITION;
     float3 worldPos : TEXCOORD0;
     float2 uv : TEXCOORD1;
     float3 normal : TEXCOORD2;
-    #if defined(SHADOWS_SCREEN)
-        float4 shadowCoordinats : TEXCOORD4;
-    #endif
+    SHADOW_COORDS(5)
+
     #if defined(VERTEXLIGHT_ON)
         float3 vertexColor : TEXCOORD3;
     #endif
@@ -52,15 +51,12 @@ void CalculateVertexLight(inout InterpolationData i)
 InterpolationData MyVertex(VertexData v)
 {
     InterpolationData i;
-    i.worldPos = mul(unity_ObjectToWorld ,v.obPos);
-    i.position = UnityObjectToClipPos(v.obPos);
+    i.worldPos = mul(unity_ObjectToWorld ,v.vertex);
+    i.pos = UnityObjectToClipPos(v.vertex);
     i.uv = TRANSFORM_TEX(v.uv, _MainTexture);
     i.normal = UnityObjectToWorldNormal(v.normal);
 
-    #if defined(SHADOWS_SCREEN)
-        i.shadowCoordinats.xy = (float2(i.position.x, -i.position.y) + i.position.w) * 0.5;
-        i.shadowCoordinats.zw = i.position.zw;
-    #endif
+    TRANSFER_SHADOW(i);
     CalculateVertexLight(i);
     return i;
 }
@@ -70,12 +66,8 @@ UnityLight CreateLight(InterpolationData i)
     UnityLight light;
     
     float3 lightVec = _WorldSpaceLightPos0.xyz - i.worldPos;
-    //float attenuation; = 10/(1 + dot(lightVec, lightVec));
-    #if defined(SHADOWS_SCREEN)
-        float attenuation = tex2D(_ShadowMapTexture, i.shadowCoordinats.xy/i.position.w);
-    #else
-        UNITY_LIGHT_ATTENUATION(attenuation, 0, i.worldPos);
-    #endif
+
+    UNITY_LIGHT_ATTENUATION(attenuation, i, i.worldPos);
 
     #if defined(POINT)|| defined(SPOT) || defined(POINT_COOKIE)
         light.dir = normalize(lightVec);

@@ -34,7 +34,7 @@
                 Blend One One
                 Zwrite Off
                 CGPROGRAM
-                #pragma multi_compile_fwdadd
+                #pragma multi_compile_fwdadd_fullshadows
 
                 #include "Light.cginc"
                 #pragma vertex MyVertex
