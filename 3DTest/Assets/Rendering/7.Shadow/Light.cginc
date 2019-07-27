@@ -1,10 +1,10 @@
 #if !defined(LightInclude)
 #define LightInclude
 
+#include "UnityPBSLighting.cginc"
 #include "AutoLight.cginc"
 #include "UnityStandardBRDF.cginc"
 #include "UnityStandardUtils.cginc"
-#include "UnityPBSLighting.cginc"
 
 #endif
 

@@ -52,6 +52,8 @@
             CGPROGRAM
             #pragma target 3.0
 
+            #pragma multi_compile_shadowcaster
+            
             #pragma vertex ShadowVertex
             #pragma fragment ShadowFrag
 
