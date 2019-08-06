@@ -5,8 +5,8 @@
         _MainTex ("Texture", 2D) = "white" {}
         _NoiseTex("Noise Texture", 2D) = "white" {}
         _Tint("Tint", Color) = (0,0,0,0)
-        _WaveAmp("Wave Amplify", Range(0,0.1)) = 0
-        _WaveSpeed("Wave Speed", range(0,5)) = 1
+        _WaveAmp("Wave Amplify", Range(0,1)) = 0
+        _WaveSpeed("Wave Speed", range(0,15)) = 1
     }
     SubShader
     {
@@ -55,7 +55,7 @@
             {
                 // sample the texture
                 fixed4 noiseColor = tex2D(_NoiseTex, i.uv);
-                fixed noise = sin(i.uv.y * _Time.y * _WaveSpeed) * _WaveAmp;
+                fixed noise = i.uv.y * (sin(i.uv.y * _WaveSpeed + _Time.y) - 0.5) * _WaveAmp;
                 fixed4 col = tex2D(_MainTex, fixed2(1 - i.uv.x + noise, i.uv.y));
                 col *= _Tint;
                 // apply fog
