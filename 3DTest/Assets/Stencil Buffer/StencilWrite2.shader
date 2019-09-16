@@ -1,4 +1,4 @@
-﻿Shader "Unlit/StencilWrite"
+﻿Shader "Unlit/StencilWrite2"
 {
     Properties
     {
@@ -6,18 +6,17 @@
     }
     SubShader
     {
-        Tags { "RenderType"="Opaque" "Queue"="Geometry-1" }
+        Tags { "RenderType"="Opaque" "Queue"="Geometry" }
         LOD 100
         ColorMask 0
-        Blend Zero One
-        ZWrite Off
-        
+        //ZWrite Off
+
         Stencil{
-                Ref 1
+                Ref 0
                 Comp Always
                 Pass Replace
             }
-        
+
         Pass
         {
             
