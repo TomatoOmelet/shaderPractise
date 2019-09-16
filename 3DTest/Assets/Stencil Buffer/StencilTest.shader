@@ -9,13 +9,13 @@
     }
     SubShader
     {
-        Tags { "RenderType"="Opaque" }
+        Tags { "RenderType"="Opaque" "Queue"="Geometry"}
         LOD 200
+
 
         Stencil{
             Ref 0
             Comp Equal
-            Pass Zero
         }
 
         CGPROGRAM
