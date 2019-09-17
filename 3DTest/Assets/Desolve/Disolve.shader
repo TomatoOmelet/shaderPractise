@@ -7,6 +7,7 @@
         _Glossiness ("Smoothness", Range(0,1)) = 0.5
         _Metallic ("Metallic", Range(0,1)) = 0.0
         _DissolvePercentage("Dissolve Percentage", Range(0,1)) = 0
+        _ShowTexture("Show Texture", Range(0,1)) = 0
     }
     SubShader
     {
@@ -25,11 +26,14 @@
         struct Input
         {
             float2 uv_MainTex;
+            float3 worldPos;
         };
 
         half _Glossiness;
         half _Metallic;
         float _DissolvePercentage;
+        float _ShowTexture;
+        float4 screenPos;
         fixed4 _Color;
 
         // Add instancing support for this shader. You need to check 'Enable Instancing' on materials that use the shader.
@@ -41,16 +45,17 @@
 
         void surf (Input IN, inout SurfaceOutputStandard o)
         {
+
+            fixed gradient = tex2D(_MainTex, (IN.worldPos.rg + IN.worldPos.rb + IN.worldPos.bg)/3).r;
+            clip(gradient - _DissolvePercentage);
             // Albedo comes from a texture tinted by color
-            fixed4 c = tex2D (_MainTex, IN.uv_MainTex) * _Color;
+            fixed4 c = lerp(gradient, 1, _ShowTexture) * _Color;
             o.Albedo = c.rgb;
             // Metallic and smoothness come from slider variables
             o.Metallic = _Metallic;
             o.Smoothness = _Glossiness;
             o.Alpha = c.a;
 
-            fixed gradient = tex2D (_MainTex, IN.uv_MainTex);
-            clip(gradient - _DissolvePercentage);
         }
         ENDCG
     }
