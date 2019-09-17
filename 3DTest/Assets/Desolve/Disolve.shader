@@ -1,4 +1,4 @@
-﻿Shader "Unlit/StencilWrite2"
+﻿Shader "Custom/Disolve"
 {
     Properties
     {
@@ -10,21 +10,12 @@
     }
     SubShader
     {
-        Tags { "RenderType"="Opaque" "Queue"="Geometry" }
-        LOD 100
-        //ColorMask 0
-        //Blend Zero One
-        ZWrite On
-        
-        Stencil{
-            Ref 1
-            Comp Never
-            Fail Replace
-        }
+        Tags { "RenderType"="Opaque" }
+        LOD 200
 
         CGPROGRAM
         // Physically based Standard lighting model, and enable shadows on all light types
-        #pragma surface surf Standard fullforwardshadows exclude_path:deferred addshadow
+        #pragma surface surf Standard fullforwardshadows
 
         // Use shader model 3.0 target, to get nicer looking lighting
         #pragma target 3.0
@@ -50,11 +41,16 @@
 
         void surf (Input IN, inout SurfaceOutputStandard o)
         {
+            // Albedo comes from a texture tinted by color
             fixed4 c = tex2D (_MainTex, IN.uv_MainTex) * _Color;
             o.Albedo = c.rgb;
+            // Metallic and smoothness come from slider variables
             o.Metallic = _Metallic;
             o.Smoothness = _Glossiness;
-            o.Alpha = 1;
+            o.Alpha = c.a;
+
+            fixed gradient = tex2D (_MainTex, IN.uv_MainTex);
+            clip(gradient - _DissolvePercentage);
         }
         ENDCG
     }

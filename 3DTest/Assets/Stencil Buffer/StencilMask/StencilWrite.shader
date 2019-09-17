@@ -6,17 +6,17 @@
     }
     SubShader
     {
-        Tags { "RenderType"="Opaque" "Queue"="Geometry-1" }
+        Tags { "RenderType"="Opaque" "Queue"="Geometry-2" }
         LOD 100
         ColorMask 0
         Blend Zero One
         ZWrite Off
         
         Stencil{
-                Ref 1
-                Comp Always
-                Pass Replace
-            }
+            Ref 1
+            Comp Always
+            Pass Replace
+        }
         
         Pass
         {
