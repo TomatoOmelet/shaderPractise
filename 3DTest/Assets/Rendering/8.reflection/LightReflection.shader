@@ -6,6 +6,7 @@
         //_SpecularTint("Specular", Color) = (0.5, 0.5, 0.5)
         [Gamma]_Metalic("Metalic", Range(0, 1)) = 0
         _MainTexture("Albedo", 2D) = "white"{}
+        _NormalMap("Normal Map", 2D) = "white"{}
         _Smoothness("Smoothness", range(0.01,1)) = 0.01
     }
 
@@ -19,7 +20,7 @@
                 #pragma multi_compile _ SHADOWS_SCREEN
                 #pragma multi_compile _ VERTEXLIGHT_ON
                 #define FORWARD_BASE_PASS
-                #include "Light.cginc"
+                #include "LightReflect.cginc"
                 #pragma vertex MyVertex
                 #pragma fragment MyFrag
                 #pragma target 3.0
@@ -36,7 +37,7 @@
                 CGPROGRAM
                 #pragma multi_compile_fwdadd_fullshadows
 
-                #include "Light.cginc"
+                #include "LightReflect.cginc"
                 #pragma vertex MyVertex
                 #pragma fragment MyFrag
                 #pragma target 3.0

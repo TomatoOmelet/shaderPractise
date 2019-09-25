@@ -1,5 +1,7 @@
-#if !defined(LightInclude)
-#define LightInclude
+// Upgrade NOTE: replaced 'UNITY_PASS_TEXCUBE(unity_SpecCube1)' with 'UNITY_PASS_TEXCUBE_SAMPLER(unity_SpecCube1,unity_SpecCube0)'
+
+#if !defined(LightReflectInclude)
+#define LightReflectInclude
 
 #include "UnityPBSLighting.cginc"
 #include "AutoLight.cginc"
@@ -9,6 +11,7 @@
 #endif
 
 float4 _Color;//, _SpecularTint;
+sampler2D _NormalMap;
 sampler2D _MainTexture;
 float4 _MainTexture_ST;
 float _Smoothness, _Metalic;
@@ -40,6 +43,7 @@ void CalculateVertexLight(inout InterpolationData i)
         // float ndotl = DotClamped(lightDir, i.normal);
         // float attenuation = 1/(1 + dot(lightVec, lightVec) * unity_4LightAtten0.x);
         // i.vertexColor = unity_LightColor[0].rgb * attenuation * ndotl;
+        
         i.vertexColor = Shade4PointLights(
             unity_4LightPosX0, unity_4LightPosY0, unity_4LightPosZ0,
             unity_LightColor[0].rgb, unity_LightColor[1].rgb, unity_LightColor[2].rgb, unity_LightColor[3].rgb,
@@ -79,7 +83,19 @@ UnityLight CreateLight(InterpolationData i)
     return light;
 }
 
-UnityIndirect CreateIndirectLight(InterpolationData i)
+//handling box projection for the reflection probe
+float3 BoxProjection(float3 direction, float3 position, float4 cubemapPosition, float3 boxMin, float3 boxMax)
+{
+    //UNITY_BRANCH
+    if(cubemapPosition.w > 0){
+        float3 factor = ((direction > 0? boxMax : boxMin) - position)/direction;
+        float scale = min(min(factor.x, factor.y), factor.z);
+        direction = direction * scale + (cubemapPosition - position);
+    }
+    return direction;
+}
+
+UnityIndirect CreateIndirectLight(InterpolationData i, float3 viewDir)
 {
     UnityIndirect indirect;
     indirect.diffuse = 0;
@@ -90,6 +106,11 @@ UnityIndirect CreateIndirectLight(InterpolationData i)
     
     #if defined(FORWARD_BASE_PASS)
         indirect.diffuse += max(0, ShadeSH9(float4(i.normal, 1)));
+        float3 reflectDir = reflect(-viewDir, i.normal);
+        Unity_GlossyEnvironmentData envData;
+        envData.roughness = 1 - _Smoothness;
+        envData.reflUVW = BoxProjection(reflectDir, i.worldPos, unity_SpecCube0_ProbePosition, unity_SpecCube0_BoxMin, unity_SpecCube0_BoxMax);
+        indirect.specular = Unity_GlossyEnvironment(UNITY_PASS_TEXCUBE_SAMPLER(unity_SpecCube0,unity_SpecCube0), unity_SpecCube0_HDR, envData);
     #endif
 
     return indirect;
@@ -98,6 +119,7 @@ UnityIndirect CreateIndirectLight(InterpolationData i)
 float4 MyFrag(InterpolationData i) : SV_TARGET
 {
     float3 viewDir = normalize(_WorldSpaceCameraPos - i.worldPos);
+    i.normal *= tex2D(_NormalMap, i.uv).rgb;
     i.normal = normalize(i.normal);    
     //float3 halfVector = normalize(lightDir + viewDir);
     
@@ -112,6 +134,6 @@ float4 MyFrag(InterpolationData i) : SV_TARGET
     return UNITY_BRDF_PBS(albedo, spectularTint,
                             oneMinusReflectivity, _Smoothness,
                             i.normal, viewDir,
-                            CreateLight(i), CreateIndirectLight(i));//spectular + diffuse;
+                            CreateLight(i), CreateIndirectLight(i, viewDir));//spectular + diffuse;
 }
 
