@@ -1,7 +1,5 @@
-// Upgrade NOTE: replaced 'UNITY_PASS_TEXCUBE(unity_SpecCube1)' with 'UNITY_PASS_TEXCUBE_SAMPLER(unity_SpecCube1,unity_SpecCube0)'
-
-#if !defined(LightReflectInclude)
-#define LightReflectInclude
+#if !defined(LightForComplexMaterialsInclude)
+#define LightForComplexMaterialsInclude
 
 #include "UnityPBSLighting.cginc"
 #include "AutoLight.cginc"
