@@ -5,12 +5,15 @@ using UnityEditor;
 
 public class MyLightingShaderGUI : ShaderGUI
 {
+    Material target;
     MaterialEditor editor;
     MaterialProperty[] properties;
 
     public override void OnGUI(MaterialEditor editor, MaterialProperty[] properties) {
+
         this.editor = editor;
         this.properties = properties;
+        target = editor.target as Material;
         DoMain();
         DoSecondary();
     }
@@ -37,10 +40,26 @@ public class MyLightingShaderGUI : ShaderGUI
 
     private void DoMetallic()
     {
-        EditorGUI.indentLevel += 2;
+        MaterialProperty metallicTex = FindProperty("_MetallicTexture");
         MaterialProperty metallic = FindProperty("_Metalic");
-        editor.ShaderProperty(metallic, MakeLabel(metallic));
-        EditorGUI.indentLevel -= 2;
+        
+        EditorGUI.BeginChangeCheck();
+        editor.TexturePropertySingleLine(MakeLabel(metallic), metallicTex,
+                                        metallicTex.textureValue == null? metallic: null);
+        if(EditorGUI.EndChangeCheck())
+        {
+            SetKeyword("_METALLIC_MAP", metallicTex.textureValue);
+        }
+    }
+
+    private void SetKeyword(string keyword, bool state)
+    {
+        if(state)
+        {
+            target.EnableKeyword(keyword);
+        }else{
+            target.DisableKeyword(keyword);
+        }
     }
 
     private void DoSmoothness()

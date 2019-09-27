@@ -12,6 +12,7 @@ float4 _Tint;//, _SpecularTint;
 sampler2D _NormalMap;
 sampler2D _MainTexture;
 float4 _MainTexture_ST;
+sampler2D _MetallicTexture;
 float _Smoothness, _Metalic;
 
 struct VertexData{
@@ -131,19 +132,29 @@ UnityIndirect CreateIndirectLight(InterpolationData i, float3 viewDir)
     return indirect;
 }
 
+float GetMetallic(InterpolationData i)
+{
+    #if defined(_METALLIC_MAP)
+        return tex2D(_MetallicTexture, i.uv).r;
+    #else
+        return _Metalic;
+    #endif
+}
+
 float4 MyFrag(InterpolationData i) : SV_TARGET
 {
+    float metalic = GetMetallic(i);
     float3 viewDir = normalize(_WorldSpaceCameraPos - i.worldPos);
     i.normal *= tex2D(_NormalMap, i.uv).rgb;
     i.normal = normalize(i.normal);    
     //float3 halfVector = normalize(lightDir + viewDir);
     
     float3 albedo = tex2D(_MainTexture, i.uv).rgb * _Tint.rgb;
-    float3 spectularTint = albedo * _Metalic;
+    float3 spectularTint = albedo * metalic;
     //float4 spectular = float4(lightCol * spectularTint.rgb, 1) *pow(DotClamped(halfVector, i.normal), _Smoothness*10);
 
-    float oneMinusReflectivity = 1 - _Metalic;
-    albedo = DiffuseAndSpecularFromMetallic(albedo, _Metalic, spectularTint, oneMinusReflectivity);//= EnergyConservationBetweenDiffuseAndSpecular(albedo, spectular.rgb ,oneMinusReflectivity);
+    float oneMinusReflectivity = 1 - metalic;
+    albedo = DiffuseAndSpecularFromMetallic(albedo, metalic, spectularTint, oneMinusReflectivity);//= EnergyConservationBetweenDiffuseAndSpecular(albedo, spectular.rgb ,oneMinusReflectivity);
     //float4 diffuse = float4(albedo * lightCol * DotClamped(i.normal, lightDir), 1);
   
     return UNITY_BRDF_PBS(albedo, spectularTint,
