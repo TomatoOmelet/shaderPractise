@@ -2,13 +2,17 @@
 {
     Properties
     {
-        _Color("_Tint", Color) = (1, 1, 1, 1)
+        _Tint("Tint Color", Color) = (1, 1, 1, 1)
         //_SpecularTint("Specular", Color) = (0.5, 0.5, 0.5)
         [Gamma]_Metalic("Metalic", Range(0, 1)) = 0
         _MainTexture("Albedo", 2D) = "white"{}
         _NormalMap("Normal Map", 2D) = "white"{}
         _Smoothness("Smoothness", range(0.01,1)) = 0.01
+
+        _DetailTex ("Detail Albedo", 2D) = "gray" {}
     }
+
+    CustomEditor "MyLightingShaderGUI"
 
     SubShader
     {

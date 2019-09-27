@@ -8,7 +8,7 @@
 
 #endif
 
-float4 _Color;//, _SpecularTint;
+float4 _Tint;//, _SpecularTint;
 sampler2D _NormalMap;
 sampler2D _MainTexture;
 float4 _MainTexture_ST;
@@ -138,7 +138,7 @@ float4 MyFrag(InterpolationData i) : SV_TARGET
     i.normal = normalize(i.normal);    
     //float3 halfVector = normalize(lightDir + viewDir);
     
-    float3 albedo = tex2D(_MainTexture, i.uv).rgb * _Color.rgb;
+    float3 albedo = tex2D(_MainTexture, i.uv).rgb * _Tint.rgb;
     float3 spectularTint = albedo * _Metalic;
     //float4 spectular = float4(lightCol * spectularTint.rgb, 1) *pow(DotClamped(halfVector, i.normal), _Smoothness*10);
 
