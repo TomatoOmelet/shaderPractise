@@ -5,6 +5,9 @@ using UnityEditor;
 
 public class MyLightingShaderGUI : ShaderGUI
 {
+    enum SmoothnessSource{
+        Uniform, Albedo, Metallic 
+    }
     Material target;
     MaterialEditor editor;
     MaterialProperty[] properties;

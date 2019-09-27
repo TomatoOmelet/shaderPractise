@@ -96,6 +96,15 @@ float3 BoxProjection(float3 direction, float3 position, float4 cubemapPosition, 
     return direction;
 }
 
+float GetSmoothness(InterpolationData i)
+{
+    #if defined(_METALLIC_MAP)
+        return tex2D(_MetallicTexture, i.uv).a * _Smoothness;
+    #else
+        return _Smoothness;
+    #endif
+}
+
 UnityIndirect CreateIndirectLight(InterpolationData i, float3 viewDir)
 {
     UnityIndirect indirect;
@@ -109,7 +118,7 @@ UnityIndirect CreateIndirectLight(InterpolationData i, float3 viewDir)
         indirect.diffuse += max(0, ShadeSH9(float4(i.normal, 1)));
         float3 reflectDir = reflect(-viewDir, i.normal);
         Unity_GlossyEnvironmentData envData;
-        envData.roughness = 1 - _Smoothness;
+        envData.roughness = 1 - GetSmoothness(i);
         envData.reflUVW = BoxProjection(reflectDir, i.worldPos, unity_SpecCube0_ProbePosition, unity_SpecCube0_BoxMin, unity_SpecCube0_BoxMax);
         //indirect.specular = Unity_GlossyEnvironment(UNITY_PASS_TEXCUBE_SAMPLER(unity_SpecCube0,unity_SpecCube0), unity_SpecCube0_HDR, envData);
         float3 probe0 = Unity_GlossyEnvironment(UNITY_PASS_TEXCUBE(unity_SpecCube0), unity_SpecCube0_HDR, envData);
@@ -144,6 +153,7 @@ float GetMetallic(InterpolationData i)
 float4 MyFrag(InterpolationData i) : SV_TARGET
 {
     float metalic = GetMetallic(i);
+    float smoothness = GetSmoothness(i);
     float3 viewDir = normalize(_WorldSpaceCameraPos - i.worldPos);
     i.normal *= tex2D(_NormalMap, i.uv).rgb;
     i.normal = normalize(i.normal);    
@@ -151,14 +161,14 @@ float4 MyFrag(InterpolationData i) : SV_TARGET
     
     float3 albedo = tex2D(_MainTexture, i.uv).rgb * _Tint.rgb;
     float3 spectularTint = albedo * metalic;
-    //float4 spectular = float4(lightCol * spectularTint.rgb, 1) *pow(DotClamped(halfVector, i.normal), _Smoothness*10);
+    //float4 spectular = float4(lightCol * spectularTint.rgb, 1) *pow(DotClamped(halfVector, i.normal), smoothness*10);
 
     float oneMinusReflectivity = 1 - metalic;
     albedo = DiffuseAndSpecularFromMetallic(albedo, metalic, spectularTint, oneMinusReflectivity);//= EnergyConservationBetweenDiffuseAndSpecular(albedo, spectular.rgb ,oneMinusReflectivity);
     //float4 diffuse = float4(albedo * lightCol * DotClamped(i.normal, lightDir), 1);
   
     return UNITY_BRDF_PBS(albedo, spectularTint,
-                            oneMinusReflectivity, _Smoothness,
+                            oneMinusReflectivity, smoothness,
                             i.normal, viewDir,
                             CreateLight(i), CreateIndirectLight(i, viewDir));//spectular + diffuse;
 }
