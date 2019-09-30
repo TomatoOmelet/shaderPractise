@@ -30,15 +30,20 @@ public class MyLightingShaderGUI : ShaderGUI
         EditorGUI.indentLevel += 2;
         editor.TextureScaleOffsetProperty(mainTex);
         EditorGUI.indentLevel -= 2;
-        DoNormal();
+        DoNormal("_NormalMap", "_BumpScale");
         DoMetallic();
         DoSmoothness();
     }
 
-    private void DoNormal()
+    private void DoNormal(string normalMapName, string bumpnessScaleName)
     {
-        MaterialProperty normalMap = FindProperty("_NormalMap");
-        editor.TexturePropertySingleLine(MakeLabel(normalMap), normalMap);
+        MaterialProperty normalMap = FindProperty(normalMapName);//"_NormalMap");
+        MaterialProperty bumpness = FindProperty(bumpnessScaleName);//"_BumpScale");
+        editor.TexturePropertySingleLine(MakeLabel(normalMap), normalMap, normalMap.textureValue? bumpness:null);
+        if(!normalMap.textureValue)
+        {
+            bumpness.floatValue = 0;
+        }
     }
 
     private void DoMetallic()
@@ -55,22 +60,27 @@ public class MyLightingShaderGUI : ShaderGUI
         }
     }
 
-    private void SetKeyword(string keyword, bool state)
-    {
-        if(state)
-        {
-            target.EnableKeyword(keyword);
-        }else{
-            target.DisableKeyword(keyword);
-        }
-    }
 
     private void DoSmoothness()
     {
+        SmoothnessSource source = SmoothnessSource.Uniform;
+        if(IsKeywordEnabled("_SMOOTHNESS_ALBEDO"))
+            source = SmoothnessSource.Albedo;
+        else if(IsKeywordEnabled("_SMOOTHNESS_METALLIC"))
+            source = SmoothnessSource.Metallic;
         EditorGUI.indentLevel += 2;
         MaterialProperty smoothness = FindProperty("_Smoothness");
         editor.ShaderProperty(smoothness, MakeLabel(smoothness));
-        EditorGUI.indentLevel -= 2;
+        EditorGUI.indentLevel += 1;
+        EditorGUI.BeginChangeCheck();
+        source = (SmoothnessSource)EditorGUILayout.EnumPopup(MakeLabel("Source"), source);
+        if(EditorGUI.EndChangeCheck())
+        {
+            RecordAction("Smoothness Source");
+            SetKeyword("_SMOOTHNESS_ALBEDO", source == SmoothnessSource.Albedo);
+            SetKeyword("_SMOOTHNESS_METALLIC", source == SmoothnessSource.Metallic);
+        }
+        EditorGUI.indentLevel -= 3;
     }
 
     private void DoSecondary()
@@ -81,7 +91,29 @@ public class MyLightingShaderGUI : ShaderGUI
         EditorGUI.indentLevel += 2;
         editor.TextureScaleOffsetProperty(detailedTex);
         EditorGUI.indentLevel -= 2;
+        DoNormal("_DetailNormalMap", "_DetailBumpScale");
     }
+
+    private void RecordAction(string label)
+    {
+        editor.RegisterPropertyChangeUndo(label);
+    }
+
+    private void SetKeyword(string keyword, bool state)
+    {
+        if(state)
+        {
+            target.EnableKeyword(keyword);
+        }else{
+            target.DisableKeyword(keyword);
+        }
+    }
+
+    private bool IsKeywordEnabled(string keyword)
+    {
+        return target.IsKeywordEnabled(keyword);
+    }
+
 
     private MaterialProperty FindProperty(string propertyName)
     {

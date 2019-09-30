@@ -9,9 +9,10 @@
 #endif
 
 float4 _Tint;//, _SpecularTint;
-sampler2D _NormalMap;
-sampler2D _MainTexture;
-float4 _MainTexture_ST;
+sampler2D _NormalMap, _DetailNormalMap;
+float _BumpScale, _DetailBumpScale;
+sampler2D _MainTexture, _DetailTex;
+float4 _MainTexture_ST, _DetailTex_ST;
 sampler2D _MetallicTexture;
 float _Smoothness, _Metalic;
 
@@ -19,13 +20,20 @@ struct VertexData{
     float4 vertex : POSITION;
     float3 normal: NORMAL;
     float2 uv : TEXCOORD0;
+    float4 tangent : TANGENT;
 };
 
 struct InterpolationData{
     float4 pos : SV_POSITION;
     float3 worldPos : TEXCOORD0;
-    float2 uv : TEXCOORD1;
+    float4 uv : TEXCOORD1;
     float3 normal : TEXCOORD2;
+    #if defined(BINORMAL_PER_FRAGMENT)
+		float4 tangent : TEXCOORD4;
+	#else
+		float3 tangent : TEXCOORD4;
+		float3 binormal : TEXCOORD6;
+	#endif
     SHADOW_COORDS(5)
 
     #if defined(VERTEXLIGHT_ON)
@@ -51,13 +59,26 @@ void CalculateVertexLight(inout InterpolationData i)
     #endif
 }
 
+float3 CreateBinormal (float3 normal, float3 tangent, float binormalSign) {
+	return cross(normal, tangent.xyz) *
+		(binormalSign * unity_WorldTransformParams.w);
+}
+
 InterpolationData MyVertex(VertexData v)
 {
     InterpolationData i;
     i.worldPos = mul(unity_ObjectToWorld ,v.vertex);
     i.pos = UnityObjectToClipPos(v.vertex);
-    i.uv = TRANSFORM_TEX(v.uv, _MainTexture);
+    i.uv.xy = TRANSFORM_TEX(v.uv, _MainTexture);
+    i.uv.zw = TRANSFORM_TEX(v.uv, _DetailTex);
     i.normal = UnityObjectToWorldNormal(v.normal);
+
+    #if defined(BINORMAL_PER_FRAGMENT)
+		i.tangent = float4(UnityObjectToWorldDir(v.tangent.xyz), v.tangent.w);
+	#else
+		i.tangent = UnityObjectToWorldDir(v.tangent.xyz);
+		i.binormal = CreateBinormal(i.normal, i.tangent, v.tangent.w);
+	#endif
 
     TRANSFER_SHADOW(i);
     CalculateVertexLight(i);
@@ -98,11 +119,13 @@ float3 BoxProjection(float3 direction, float3 position, float4 cubemapPosition, 
 
 float GetSmoothness(InterpolationData i)
 {
-    #if defined(_METALLIC_MAP)
-        return tex2D(_MetallicTexture, i.uv).a * _Smoothness;
-    #else
-        return _Smoothness;
+    float smooth = 1;
+    #if defined(_SMOOTHNESS_ALBEDO)
+        smooth = tex2D(_MainTexture, i.uv).a * _Smoothness;
+    #elif defined(_SMOOTHNESS_METALLIC)
+        smooth = tex2D(_MetallicTexture, i.uv).a * _Smoothness;
     #endif
+    return smooth * _Smoothness;
 }
 
 UnityIndirect CreateIndirectLight(InterpolationData i, float3 viewDir)
@@ -150,13 +173,33 @@ float GetMetallic(InterpolationData i)
     #endif
 }
 
+void InitializeFragmentNormal(inout InterpolationData i) 
+{
+	float3 mainNormal =
+		UnpackScaleNormal(tex2D(_NormalMap, i.uv.xy), _BumpScale);
+	float3 detailNormal =
+		UnpackScaleNormal(tex2D(_DetailNormalMap, i.uv.zw), _DetailBumpScale);
+	float3 tangentSpaceNormal = BlendNormals(mainNormal, detailNormal);
+
+	#if defined(BINORMAL_PER_FRAGMENT)
+		float3 binormal = CreateBinormal(i.normal, i.tangent.xyz, i.tangent.w);
+	#else
+		float3 binormal = i.binormal;
+	#endif
+	
+	i.normal = normalize(
+		tangentSpaceNormal.x * i.tangent +
+		tangentSpaceNormal.y * binormal +
+		tangentSpaceNormal.z * i.normal
+	);
+}
+
 float4 MyFrag(InterpolationData i) : SV_TARGET
 {
     float metalic = GetMetallic(i);
     float smoothness = GetSmoothness(i);
     float3 viewDir = normalize(_WorldSpaceCameraPos - i.worldPos);
-    i.normal *= tex2D(_NormalMap, i.uv).rgb;
-    i.normal = normalize(i.normal);    
+    InitializeFragmentNormal(i);    
     //float3 halfVector = normalize(lightDir + viewDir);
     
     float3 albedo = tex2D(_MainTexture, i.uv).rgb * _Tint.rgb;

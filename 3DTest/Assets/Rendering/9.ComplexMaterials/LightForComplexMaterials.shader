@@ -6,11 +6,14 @@
         //_SpecularTint("Specular", Color) = (0.5, 0.5, 0.5)
         _MainTexture("Albedo", 2D) = "white"{}
         _NormalMap("Normal Map", 2D) = "white"{}
+        _BumpScale("Metalic", Range(0, 1)) = 0
         [NoScaleOffset]_MetallicTexture("Metallic Map", 2D) = "white"{}
         [Gamma]_Metalic("Metalic", Range(0, 1)) = 0
         _Smoothness("Smoothness", range(0.01,1)) = 0.01
 
         _DetailTex ("Detail Albedo", 2D) = "gray" {}
+        _DetailNormalMap("Detailed Normal Map", 2D) = "white"{}
+        _DetailBumpScale("Metalic", Range(0, 1)) = 0
     }
 
     CustomEditor "MyLightingShaderGUI"
@@ -25,6 +28,7 @@
                 #pragma multi_compile _ SHADOWS_SCREEN
                 #pragma multi_compile _ VERTEXLIGHT_ON
                 #pragma shader_feature _METALLIC_MAP
+                #pragma shader_feature _ _SMOOTHNESS_ALBEDO _SMOOTHNESS_METALLIC
                 #define FORWARD_BASE_PASS
                 #include "LightForComplexMaterials.cginc"
                 #pragma vertex MyVertex
@@ -44,6 +48,7 @@
                 CGPROGRAM
                 #pragma multi_compile_fwdadd_fullshadows
                 #pragma shader_feature _METALLIC_MAP
+                #pragma shader_feature _ _SMOOTHNESS_ALBEDO _SMOOTHNESS_METALLIC
                 #include "LightForComplexMaterials.cginc"
                 #pragma vertex MyVertex
                 #pragma fragment MyFrag
