@@ -11,6 +11,7 @@ public class MyLightingShaderGUI : ShaderGUI
     Material target;
     MaterialEditor editor;
     MaterialProperty[] properties;
+    static ColorPickerHDRConfig emissionConfig = new ColorPickerHDRConfig(0f, 99f, 1f / 99f, 3f);
 
     public override void OnGUI(MaterialEditor editor, MaterialProperty[] properties) {
 
@@ -33,6 +34,7 @@ public class MyLightingShaderGUI : ShaderGUI
         DoNormal("_NormalMap", "_BumpScale");
         DoMetallic();
         DoSmoothness();
+        DoEmission();
     }
 
     private void DoNormal(string normalMapName, string bumpnessScaleName)
@@ -57,6 +59,20 @@ public class MyLightingShaderGUI : ShaderGUI
         if(EditorGUI.EndChangeCheck())
         {
             SetKeyword("_METALLIC_MAP", metallicTex.textureValue);
+        }
+    }
+
+    private void DoEmission()
+    {
+        MaterialProperty emissionTex = FindProperty("_EmissionMap");
+        MaterialProperty emission = FindProperty("_Emission");
+        
+        EditorGUI.BeginChangeCheck();
+        editor.TexturePropertyWithHDRColor(MakeLabel(emissionTex), emissionTex, emission, emissionConfig, false);
+
+        if(EditorGUI.EndChangeCheck())
+        {
+            SetKeyword("_EMISSION_MAP", emissionTex.textureValue);
         }
     }
 

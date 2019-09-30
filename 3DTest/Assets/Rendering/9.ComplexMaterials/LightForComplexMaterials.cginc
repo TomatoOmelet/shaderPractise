@@ -16,6 +16,9 @@ float4 _MainTexture_ST, _DetailTex_ST;
 sampler2D _MetallicTexture;
 float _Smoothness, _Metalic;
 
+sampler2D _EmissionMap;
+float3 _Emission;
+
 struct VertexData{
     float4 vertex : POSITION;
     float3 normal: NORMAL;
@@ -62,6 +65,19 @@ void CalculateVertexLight(inout InterpolationData i)
 float3 CreateBinormal (float3 normal, float3 tangent, float binormalSign) {
 	return cross(normal, tangent.xyz) *
 		(binormalSign * unity_WorldTransformParams.w);
+}
+
+float3 GetEmission(InterpolationData i)
+{
+    #if defined(FORWARD_BASE_PASS)
+        #if defined(_EMISSION_MAP)
+            return _Emission * tex2D(_EmissionMap, i.uv.xy);
+        #else
+            return _Emission;
+        #endif
+    #else
+        return 0;
+    #endif
 }
 
 InterpolationData MyVertex(VertexData v)
@@ -210,9 +226,11 @@ float4 MyFrag(InterpolationData i) : SV_TARGET
     albedo = DiffuseAndSpecularFromMetallic(albedo, metalic, spectularTint, oneMinusReflectivity);//= EnergyConservationBetweenDiffuseAndSpecular(albedo, spectular.rgb ,oneMinusReflectivity);
     //float4 diffuse = float4(albedo * lightCol * DotClamped(i.normal, lightDir), 1);
   
-    return UNITY_BRDF_PBS(albedo, spectularTint,
+    float4 color = UNITY_BRDF_PBS(albedo, spectularTint,
                             oneMinusReflectivity, smoothness,
                             i.normal, viewDir,
                             CreateLight(i), CreateIndirectLight(i, viewDir));//spectular + diffuse;
+    color.rgb += GetEmission(i);
+    return color;
 }
 

@@ -11,6 +11,9 @@
         [Gamma]_Metalic("Metalic", Range(0, 1)) = 0
         _Smoothness("Smoothness", range(0.01,1)) = 0.01
 
+        [NoScaleOffset] _EmissionMap ("Emission", 2D) = "black" {}
+		_Emission ("Emission Color", Color) = (0, 0, 0)
+
         _DetailTex ("Detail Albedo", 2D) = "gray" {}
         _DetailNormalMap("Detailed Normal Map", 2D) = "white"{}
         _DetailBumpScale("Metalic", Range(0, 1)) = 0
@@ -29,6 +32,7 @@
                 #pragma multi_compile _ VERTEXLIGHT_ON
                 #pragma shader_feature _METALLIC_MAP
                 #pragma shader_feature _ _SMOOTHNESS_ALBEDO _SMOOTHNESS_METALLIC
+                #pragma shader_feature _EMISSION_MAP
                 #define FORWARD_BASE_PASS
                 #include "LightForComplexMaterials.cginc"
                 #pragma vertex MyVertex
