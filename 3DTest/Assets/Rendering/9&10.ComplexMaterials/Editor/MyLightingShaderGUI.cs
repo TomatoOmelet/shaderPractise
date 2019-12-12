@@ -35,7 +35,19 @@ public class MyLightingShaderGUI : ShaderGUI
         DoMetallic();
         DoSmoothness();
         DoEmission();
+        DoAlphaCutoff();
     }
+
+    void DoAlphaCutoff () {
+        
+		MaterialProperty slider = FindProperty("_AlphaCutoff");
+        if(slider != null)
+        {
+            EditorGUI.indentLevel += 2;
+            editor.ShaderProperty(slider, MakeLabel(slider));
+            EditorGUI.indentLevel -= 2;
+        }
+	}
 
     private void DoNormal(string normalMapName, string bumpnessScaleName)
     {
