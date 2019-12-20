@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEditor;
+using UnityEngine.Rendering;
 
 public class MyLightingShaderGUI : ShaderGUI
 {
@@ -12,6 +13,7 @@ public class MyLightingShaderGUI : ShaderGUI
     enum RenderingMode {
 		Opaque, Cutout
 	}
+    bool shouldShowAlphaCutoff;
     Material target;
     MaterialEditor editor;
     MaterialProperty[] properties;
@@ -40,7 +42,8 @@ public class MyLightingShaderGUI : ShaderGUI
         DoMetallic();
         DoSmoothness();
         DoEmission();
-        DoAlphaCutoff();
+        if(shouldShowAlphaCutoff)
+            DoAlphaCutoff();
     }
 
     void DoAlphaCutoff () {
@@ -56,8 +59,10 @@ public class MyLightingShaderGUI : ShaderGUI
 
     void DoRenderingMode () {
 		RenderingMode mode = RenderingMode.Opaque;
+        shouldShowAlphaCutoff = false;
 		if (IsKeywordEnabled("_RENDERING_CUTOUT")) {
 			mode = RenderingMode.Cutout;
+            shouldShowAlphaCutoff = true;
 		}
 
 		EditorGUI.BeginChangeCheck();
@@ -67,6 +72,14 @@ public class MyLightingShaderGUI : ShaderGUI
 		if (EditorGUI.EndChangeCheck()) {
 			RecordAction("Rendering Mode");
 			SetKeyword("_RENDERING_CUTOUT", mode == RenderingMode.Cutout);
+            
+			RenderQueue queue = (mode == RenderingMode.Opaque ? RenderQueue.Geometry : RenderQueue.AlphaTest);
+            string renderType = (mode == RenderingMode.Opaque ? "" : "TransparentCutout");
+			foreach (Material m in editor.targets) {
+				m.renderQueue = (int)queue;
+                m.SetOverrideTag("RenderType", renderType);
+			}
+
 		}
 	}
 
