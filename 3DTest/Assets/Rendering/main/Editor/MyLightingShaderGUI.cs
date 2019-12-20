@@ -8,6 +8,10 @@ public class MyLightingShaderGUI : ShaderGUI
     enum SmoothnessSource{
         Uniform, Albedo, Metallic 
     }
+
+    enum RenderingMode {
+		Opaque, Cutout
+	}
     Material target;
     MaterialEditor editor;
     MaterialProperty[] properties;
@@ -18,6 +22,7 @@ public class MyLightingShaderGUI : ShaderGUI
         this.editor = editor;
         this.properties = properties;
         target = editor.target as Material;
+        DoRenderingMode();
         DoMain();
         DoSecondary();
     }
@@ -47,6 +52,22 @@ public class MyLightingShaderGUI : ShaderGUI
             editor.ShaderProperty(slider, MakeLabel(slider));
             EditorGUI.indentLevel -= 2;
         }
+	}
+
+    void DoRenderingMode () {
+		RenderingMode mode = RenderingMode.Opaque;
+		if (IsKeywordEnabled("_RENDERING_CUTOUT")) {
+			mode = RenderingMode.Cutout;
+		}
+
+		EditorGUI.BeginChangeCheck();
+		mode = (RenderingMode)EditorGUILayout.EnumPopup(
+			MakeLabel("Rendering Mode"), mode
+		);
+		if (EditorGUI.EndChangeCheck()) {
+			RecordAction("Rendering Mode");
+			SetKeyword("_RENDERING_CUTOUT", mode == RenderingMode.Cutout);
+		}
 	}
 
     private void DoNormal(string normalMapName, string bumpnessScaleName)

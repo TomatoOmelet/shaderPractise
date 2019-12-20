@@ -224,7 +224,9 @@ float GetAlpha(inout InterpolationData i)
 float4 MyFrag(InterpolationData i) : SV_TARGET
 {
     float alpha = GetAlpha(i);
-    clip(alpha - _AlphaCutoff);
+    #if defined(_RENDERING_CUTOUT)
+        clip(alpha - _AlphaCutoff);
+    #endif
     float metalic = GetMetallic(i);
     float smoothness = GetSmoothness(i);
     float3 viewDir = normalize(_WorldSpaceCameraPos - i.worldPos);
