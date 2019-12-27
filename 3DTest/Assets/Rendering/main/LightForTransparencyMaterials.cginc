@@ -246,8 +246,9 @@ float4 MyFrag(InterpolationData i) : SV_TARGET
                             i.normal, viewDir,
                             CreateLight(i), CreateIndirectLight(i, viewDir));//spectular + diffuse;
     color.rgb += GetEmission(i);
-    color.a = alpha;
-    
+    #if defined(_RENDERING_FADE)
+        color.a = alpha;
+    #endif
     return color;
 }
 

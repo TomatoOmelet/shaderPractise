@@ -11,8 +11,38 @@ public class MyLightingShaderGUI : ShaderGUI
     }
 
     enum RenderingMode {
-		Opaque, Cutout
+		Opaque, Cutout, Fade
 	}
+
+    struct RenderingSettings {
+		public RenderQueue queue;
+		public string renderType;
+        public BlendMode srcAlpha, dstAlpha;
+
+        public static RenderingSettings[] modes = {
+			new RenderingSettings() {
+				queue = RenderQueue.Geometry,
+				renderType = "",
+                srcAlpha = BlendMode.One,
+                dstAlpha = BlendMode.Zero
+			},
+			new RenderingSettings() {
+				queue = RenderQueue.AlphaTest,
+				renderType = "TransparentCutout",
+                srcAlpha = BlendMode.One,
+                dstAlpha = BlendMode.Zero
+			},
+			new RenderingSettings() {
+				queue = RenderQueue.Transparent,
+				renderType = "Transparent",
+                srcAlpha = BlendMode.SrcAlpha,
+                dstAlpha = BlendMode.OneMinusSrcAlpha
+			}
+		};
+	}
+
+
+
     bool shouldShowAlphaCutoff;
     Material target;
     MaterialEditor editor;
@@ -63,8 +93,9 @@ public class MyLightingShaderGUI : ShaderGUI
 		if (IsKeywordEnabled("_RENDERING_CUTOUT")) {
 			mode = RenderingMode.Cutout;
             shouldShowAlphaCutoff = true;
-		}
-
+		}else if (IsKeywordEnabled("_RENDERING_FADE")) {
+			mode = RenderingMode.Fade;
+        }
 		EditorGUI.BeginChangeCheck();
 		mode = (RenderingMode)EditorGUILayout.EnumPopup(
 			MakeLabel("Rendering Mode"), mode
@@ -72,12 +103,14 @@ public class MyLightingShaderGUI : ShaderGUI
 		if (EditorGUI.EndChangeCheck()) {
 			RecordAction("Rendering Mode");
 			SetKeyword("_RENDERING_CUTOUT", mode == RenderingMode.Cutout);
+            SetKeyword("_RENDERING_FADE", mode == RenderingMode.Fade);
             
-			RenderQueue queue = (mode == RenderingMode.Opaque ? RenderQueue.Geometry : RenderQueue.AlphaTest);
-            string renderType = (mode == RenderingMode.Opaque ? "" : "TransparentCutout");
+			RenderingSettings setting = RenderingSettings.modes[(int)mode];
 			foreach (Material m in editor.targets) {
-				m.renderQueue = (int)queue;
-                m.SetOverrideTag("RenderType", renderType);
+				m.renderQueue = (int)setting.queue;
+                m.SetOverrideTag("RenderType", setting.renderType);
+                m.SetFloat("_SrcBlend", (float)setting.srcAlpha);
+                m.SetFloat("_DstBlend", (float)setting.dstAlpha);
 			}
 
 		}

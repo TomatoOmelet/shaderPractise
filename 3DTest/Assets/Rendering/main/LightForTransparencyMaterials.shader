@@ -19,6 +19,9 @@
         _DetailBumpScale("Metalic", Range(0, 1)) = 0
 
         _AlphaCutoff ("Alpha Cutoff", Range(0, 1)) = 0.5
+
+        [HideInInspector] _SrcBlend ("_SrcBlend", Float) = 1
+		[HideInInspector] _DstBlend ("_DstBlend", Float) = 0
     }
 
     CustomEditor "MyLightingShaderGUI"
@@ -29,31 +32,34 @@
             Tags{
                         "LightMode" = "ForwardBase"
                     }
-                CGPROGRAM
-                #pragma multi_compile _ SHADOWS_SCREEN
-                #pragma multi_compile _ VERTEXLIGHT_ON
-                #pragma shader_feature _RENDERING_CUTOUT
-                #pragma shader_feature _METALLIC_MAP
-                #pragma shader_feature _ _SMOOTHNESS_ALBEDO _SMOOTHNESS_METALLIC
-                #pragma shader_feature _EMISSION_MAP
-                #define FORWARD_BASE_PASS
-                #include "LightForTransparencyMaterials.cginc"
-                #pragma vertex MyVertex
-                #pragma fragment MyFrag
-                #pragma target 3.0
-                
+            Blend [_SrcBlend] [_DstBlend] 
+            
+            CGPROGRAM
+            #pragma multi_compile _ SHADOWS_SCREEN
+            #pragma multi_compile _ VERTEXLIGHT_ON
+            #pragma shader_feature _ _RENDERING_CUTOUT _RENDERING_FADE
+            #pragma shader_feature _METALLIC_MAP
+            #pragma shader_feature _ _SMOOTHNESS_ALBEDO _SMOOTHNESS_METALLIC
+            #pragma shader_feature _EMISSION_MAP
+            #define FORWARD_BASE_PASS
+            #include "LightForTransparencyMaterials.cginc"
+            #pragma vertex MyVertex
+            #pragma fragment MyFrag
+            #pragma target 3.0
+            
 
-                ENDCG
+            ENDCG
         }
 
         Pass{
             Tags{
                         "LightMode" = "ForwardAdd"
                     }
-                Blend SrcAlpha OneMinusSrcAlpha
+                Blend [_SrcBlend] One
                 Zwrite Off
                 CGPROGRAM
                 #pragma multi_compile_fwdadd_fullshadows
+                #pragma shader_feature _ _RENDERING_CUTOUT _RENDERING_FADE
                 #pragma shader_feature _METALLIC_MAP
                 #pragma shader_feature _ _SMOOTHNESS_ALBEDO _SMOOTHNESS_METALLIC
                 #include "LightForTransparencyMaterials.cginc"
