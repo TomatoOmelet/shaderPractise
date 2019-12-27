@@ -22,6 +22,7 @@
 
         [HideInInspector] _SrcBlend ("_SrcBlend", Float) = 1
 		[HideInInspector] _DstBlend ("_DstBlend", Float) = 0
+        [HideInInspector] _ZWrite ("_ZWrite", Float) = 1
     }
 
     CustomEditor "MyLightingShaderGUI"
@@ -33,6 +34,7 @@
                         "LightMode" = "ForwardBase"
                     }
             Blend [_SrcBlend] [_DstBlend] 
+            ZWrite [_ZWrite]
             
             CGPROGRAM
             #pragma multi_compile _ SHADOWS_SCREEN
