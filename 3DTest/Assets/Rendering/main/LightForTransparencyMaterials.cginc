@@ -240,13 +240,17 @@ float4 MyFrag(InterpolationData i) : SV_TARGET
     float oneMinusReflectivity = 1 - metalic;
     albedo = DiffuseAndSpecularFromMetallic(albedo, metalic, spectularTint, oneMinusReflectivity);//= EnergyConservationBetweenDiffuseAndSpecular(albedo, spectular.rgb ,oneMinusReflectivity);
     //float4 diffuse = float4(albedo * lightCol * DotClamped(i.normal, lightDir), 1);
-  
+    #if defined(_RENDERING_TRANSPARENT)
+		albedo *= alpha;
+        alpha = 1 - oneMinusReflectivity + alpha * oneMinusReflectivity;
+	#endif
+
     float4 color = UNITY_BRDF_PBS(albedo, spectularTint,
                             oneMinusReflectivity, smoothness,
                             i.normal, viewDir,
                             CreateLight(i), CreateIndirectLight(i, viewDir));//spectular + diffuse;
     color.rgb += GetEmission(i);
-    #if defined(_RENDERING_FADE)
+    #if defined(_RENDERING_FADE) || defined(_RENDERING_TRANSPARENT)
         color.a = alpha;
     #endif
     return color;
