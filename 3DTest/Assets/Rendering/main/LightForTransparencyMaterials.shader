@@ -83,6 +83,8 @@
 
             #pragma multi_compile_shadowcaster
             
+            #pragma shader_feature _ _SMOOTHNESS_ALBEDO _SMOOTHNESS_METALLIC
+            #pragma shader_feature _ _RENDERING_CUTOUT _RENDERING_FADE _RENDERING_TRANSPARENT
             #pragma vertex ShadowVertex
             #pragma fragment ShadowFrag
 
