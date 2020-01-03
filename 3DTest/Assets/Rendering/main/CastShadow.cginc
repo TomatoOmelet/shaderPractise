@@ -4,8 +4,12 @@
 
 #include "UnityCG.cginc"
 
-#if defined(_RENDERING_FADE) && !defined(_RENDERING_TRANSPARENT)
-	#define SHADOWS_SEMITRANSPARENT 1
+#if defined(_RENDERING_FADE) || defined(_RENDERING_TRANSPARENT)
+    #if defined(_SEMITRANSPARENT_SHADOWS)
+	    #define SHADOWS_SEMITRANSPARENT 1
+    #else 
+        #define _RENDERING_CUTOUT
+    #endif
 #endif
 
 
@@ -20,7 +24,7 @@ sampler2D _MainTexture;
 float4 _MainTexture_ST;
 float _AlphaCutoff;
 
-sampler3D DitherMaskLOD;
+sampler3D _DitherMaskLOD;
 
 struct VertexData{
     fixed4 position:POSITION;
@@ -70,7 +74,7 @@ InterpolatorsVertex ShadowVertex (VertexData v) {
     return i;
 }
 
-float GetAlpha (InterpolatorsVertex i) {
+float GetAlpha (InterpolatorsFrag i) {
 	float alpha = _Tint.a;
 	#if SHADOWS_NEED_UV
 		alpha *= tex2D(_MainTexture, i.uv.xy).a;
@@ -78,11 +82,16 @@ float GetAlpha (InterpolatorsVertex i) {
 	return alpha;
 }
 
-float4 ShadowFrag (InterpolatorsVertex i) : SV_TARGET {
+float4 ShadowFrag (InterpolatorsFrag i) : SV_TARGET {
     float alpha = GetAlpha(i);
 	#if defined(_RENDERING_CUTOUT)
 		clip(alpha - _AlphaCutoff);
 	#endif
+
+    #if SHADOWS_SEMITRANSPARENT
+        float dithering = tex3D(_DitherMaskLOD, float3(i.vpos.xy * 0.25, alpha * 0.9375)).a;
+        clip(dithering - 0.01);
+    #endif
 
     #if defined(SHADOWS_CUBE)
         float depth = length(i.lightVec) + unity_LightShadowBias.x;

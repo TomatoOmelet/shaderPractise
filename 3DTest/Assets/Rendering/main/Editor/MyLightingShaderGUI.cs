@@ -83,8 +83,6 @@ public class MyLightingShaderGUI : ShaderGUI
         DoMetallic();
         DoSmoothness();
         DoEmission();
-        if(shouldShowAlphaCutoff)
-            DoAlphaCutoff();
     }
 
     void DoAlphaCutoff () {
@@ -96,6 +94,22 @@ public class MyLightingShaderGUI : ShaderGUI
             editor.ShaderProperty(slider, MakeLabel(slider));
             EditorGUI.indentLevel -= 2;
         }
+	}
+
+	void DoSemitransparentShadows () {
+        EditorGUI.BeginChangeCheck();
+        bool semitransparentShadows =
+			EditorGUILayout.Toggle(
+				MakeLabel("SemitransShadows", "Semitransparent Shadows"),
+				IsKeywordEnabled("_SEMITRANSPARENT_SHADOWS")
+			);
+        if(EditorGUI.EndChangeCheck())
+        {
+            SetKeyword("_SEMITRANSPARENT_SHADOWS", semitransparentShadows);
+        }
+        if (!semitransparentShadows) {
+			shouldShowAlphaCutoff = true;
+		}
 	}
 
     void DoRenderingMode () {
@@ -127,8 +141,13 @@ public class MyLightingShaderGUI : ShaderGUI
                 m.SetFloat("_DstBlend", (float)setting.dstAlpha);
                 m.SetFloat("_ZWrite", setting.zWrite?1:0);
 			}
-
 		}
+        if(mode == RenderingMode.Fade || mode == RenderingMode.Transparent)
+        {
+            DoSemitransparentShadows();
+        }
+        if(shouldShowAlphaCutoff)
+            DoAlphaCutoff();
 	}
 
     private void DoNormal(string normalMapName, string bumpnessScaleName)
