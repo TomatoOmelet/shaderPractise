@@ -297,9 +297,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 0ed3f4cf0c1da824ead5153b27834f75, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  clip: {fileID: 8300000, guid: 399496d3e04439f4f8015030892e4951, type: 3}
-  length: 100
-  meshComplexity: 6
+  clip: {fileID: 8300000, guid: 731b73b3340212346a1d1834f5ff5cd4, type: 3}
+  length: 5
+  meshComplexity: 10
 --- !u!33 &1650847711
 MeshFilter:
   m_ObjectHideFlags: 0

@@ -20,7 +20,7 @@ public class VisializeTesting : MonoBehaviour
         Mesh mesh = GetComponent<MeshFilter>().mesh;
         //get audio clip info
         float[] samples = new float[clip.samples * clip.channels];
-        int step = 1 + clip.samples * clip.channels/stepModifier;
+        int step = 50 + clip.samples * clip.channels/stepModifier;
         Debug.Log(step);
         clip.GetData(samples, 0);
         float modifier = length/samples.Length;
@@ -46,6 +46,7 @@ public class VisializeTesting : MonoBehaviour
 
         mesh.vertices = vertices.ToArray();
         mesh.triangles = triangles.ToArray();
+        mesh.RecalculateNormals();
     }
 
     private void AddToMesh(float sampleValue, float xPos, ref List<Vector3> vertices, ref List<int> triangles, bool addTriangles = true)
@@ -63,20 +64,20 @@ public class VisializeTesting : MonoBehaviour
         for(int x = startIndex; x < startIndex + meshComplexity - 1; ++x)
         {
             triangles.Add(x - meshComplexity);
-            triangles.Add(x);
             triangles.Add(x - meshComplexity + 1);
+            triangles.Add(x);
 
             triangles.Add(x - meshComplexity + 1);
-            triangles.Add(x);
             triangles.Add(x + 1);
+            triangles.Add(x);
         }
         triangles.Add(startIndex - 1);
-        triangles.Add(startIndex + meshComplexity - 1);
         triangles.Add(startIndex - meshComplexity);
+        triangles.Add(startIndex + meshComplexity - 1);
 
         triangles.Add(startIndex - meshComplexity);
-        triangles.Add(startIndex + meshComplexity - 1);
         triangles.Add(startIndex);
+        triangles.Add(startIndex + meshComplexity - 1);
 
     }
 
@@ -85,12 +86,12 @@ public class VisializeTesting : MonoBehaviour
         for(int x = 0; x < meshComplexity - 1; ++x)
         {
             triangles.Add(0);
-            triangles.Add(x);
             triangles.Add(x + 1);
+            triangles.Add(x);
         }
         triangles.Add(0);
-        triangles.Add(meshComplexity);
         triangles.Add(1);
+        triangles.Add(meshComplexity);
     }
     
     private void AddEndingTriangles(ref List<int> triangles, int verticesLength)
@@ -99,12 +100,12 @@ public class VisializeTesting : MonoBehaviour
         for(int x = lastIndex - meshComplexity; x < lastIndex - 1; ++x)
         {
             triangles.Add(lastIndex);
-            triangles.Add(x);
             triangles.Add(x + 1);
+            triangles.Add(x);
         }
         triangles.Add(lastIndex);
-        triangles.Add(lastIndex - 1);
         triangles.Add(lastIndex - meshComplexity);
+        triangles.Add(lastIndex - 1);
     }
 
     private void DebugAudio()
@@ -133,7 +134,7 @@ public class VisializeTesting : MonoBehaviour
             Debug.LogError("Average: the second index needs to be larger than the first one.");
         }
         float sum = 0;
-        sum += array[index1];
+        sum += Mathf.Abs(array[index1]);
         for(int i = index1 + 1; i < index2; ++i)
         {
             sum += array[i];
